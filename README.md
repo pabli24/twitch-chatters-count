@@ -9,7 +9,7 @@
 
 <li>in the main/directory page</li>
 
-<img width="500" src="https://raw.githubusercontent.com/pabli24/twitch-chatters-count/refs/heads/main/img/directory.webp">
+<img width="1000" src="https://raw.githubusercontent.com/pabli24/twitch-chatters-count/refs/heads/main/img/directory.webp">
 
 <h3>Some reasons why numbers may differ:</h3>
 <li>more viewers than chatters: bots, stream autoplays on the main page of twitch, people watch not logged in</li>
