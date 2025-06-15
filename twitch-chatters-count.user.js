@@ -1,21 +1,23 @@
 // ==UserScript==
-// @name         Twitch [Chatters Count]
-// @namespace    https://github.com/pabli24
-// @version      1.0.1
-// @description  Shows the amount of people in the chat
-// @author       Pabli
-// @license      MIT
-// @match        https://www.twitch.tv/*
-// @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHBhdGggZmlsbD0iI2ZmODI4MCIgZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNMTU2LjYgMTk2LjNhOTkuNCA5OS40IDAgMSAxIDEyMy4xIDk2LjUgMzkuNyAzOS43IDAgMCAwIDM1LjkgMjIuN2gxOS45YTU5LjYgNTkuNiAwIDAgMSA1OS42IDU5LjZ2MzkuOGgtMzkuOHYtMzkuOGMwLTExLTguOS0xOS45LTE5LjktMTkuOWgtMTkuOWE3OS40IDc5LjQgMCAwIDEtNTkuNi0yNi45IDc5LjUgNzkuNSAwIDAgMS01OS42IDI2LjloLTE5LjljLTExIDAtMTkuOSA4LjktMTkuOSAxOS45djM5LjhoLTM5Ljh2LTM5LjhhNTkuNiA1OS42IDAgMCAxIDU5LjYtNTkuNmgxOS45YzE1LjQgMCAyOS40LTguOCAzNS45LTIyLjdhOTkuNCA5OS40IDAgMCAxLTc1LjctOTYuNlpNMjU2IDI1NmE1OS42IDU5LjYgMCAxIDEgMC0xMTkuMiA1OS42IDU5LjYgMCAwIDEgMCAxMTkuMloiLz48cGF0aCBmaWxsPSIjZmY4MjgwIiBkPSJNMCA1MTJWMGgxMTYuOHYzNi4xSDQzLjN2NDQxLjNoNzMuNlY1MTJIMFpNNTEyIDB2NTEySDM5NS4ydi0zNi4xaDczLjZWMzQuNmgtNzMuNlYwSDUxMloiLz48L3N2Zz4=
-// @run-at       document-end
-// @grant        GM_xmlhttpRequest
-// @grant        GM_info
-// @grant        GM_notification
-// @grant        GM_openInTab
-// @grant        GM_setValue
-// @grant        GM_getValue
-// @grant        GM_registerMenuCommand
-// @grant        GM_unregisterMenuCommand
+// @name           Twitch [Chatters Count]
+// @name:pl        Twitch [Ilość osób na czacie]
+// @namespace      https://github.com/pabli24
+// @version        1.0.2
+// @description    Shows the amount of people in the chat
+// @description:pl Pokazuje liczbę użytkowników na czacie
+// @author         Pabli
+// @license        MIT
+// @match          https://www.twitch.tv/*
+// @icon           data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHBhdGggZmlsbD0iI2ZmODI4MCIgZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNMTU2LjYgMTk2LjNhOTkuNCA5OS40IDAgMSAxIDEyMy4xIDk2LjUgMzkuNyAzOS43IDAgMCAwIDM1LjkgMjIuN2gxOS45YTU5LjYgNTkuNiAwIDAgMSA1OS42IDU5LjZ2MzkuOGgtMzkuOHYtMzkuOGMwLTExLTguOS0xOS45LTE5LjktMTkuOWgtMTkuOWE3OS40IDc5LjQgMCAwIDEtNTkuNi0yNi45IDc5LjUgNzkuNSAwIDAgMS01OS42IDI2LjloLTE5LjljLTExIDAtMTkuOSA4LjktMTkuOSAxOS45djM5LjhoLTM5Ljh2LTM5LjhhNTkuNiA1OS42IDAgMCAxIDU5LjYtNTkuNmgxOS45YzE1LjQgMCAyOS40LTguOCAzNS45LTIyLjdhOTkuNCA5OS40IDAgMCAxLTc1LjctOTYuNlpNMjU2IDI1NmE1OS42IDU5LjYgMCAxIDEgMC0xMTkuMiA1OS42IDU5LjYgMCAwIDEgMCAxMTkuMloiLz48cGF0aCBmaWxsPSIjZmY4MjgwIiBkPSJNMCA1MTJWMGgxMTYuOHYzNi4xSDQzLjN2NDQxLjNoNzMuNlY1MTJIMFpNNTEyIDB2NTEySDM5NS4ydi0zNi4xaDczLjZWMzQuNmgtNzMuNlYwSDUxMloiLz48L3N2Zz4=
+// @run-at         document-end
+// @grant          GM_xmlhttpRequest
+// @grant          GM_info
+// @grant          GM_notification
+// @grant          GM_openInTab
+// @grant          GM_setValue
+// @grant          GM_getValue
+// @grant          GM_registerMenuCommand
+// @grant          GM_unregisterMenuCommand
 // ==/UserScript==
 
 (async () => {
@@ -72,7 +74,7 @@ setInterval(() => {
 	}
 	
 	let channelName = path.split('/')[1];
-	if (!channelName || ['settings', 'subscriptions', 'inventory', 'wallet', 'privacy', 'annual-recap'].includes(channelName)) return;
+	if (!channelName || ['settings', 'subscriptions', 'inventory', 'wallet', 'privacy', 'turbo', 'downloads', 'p', 'annual-recap'].includes(channelName)) return;
 	
 	if (channelName === 'popout') {
 		channelName = path.split('/')[2];
