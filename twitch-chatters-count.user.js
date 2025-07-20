@@ -2,7 +2,7 @@
 // @name           Twitch [Chatters Count]
 // @name:pl        Twitch [Ilość osób na czacie]
 // @namespace      https://github.com/pabli24
-// @version        1.0.2
+// @version        1.1.0
 // @description    Shows the amount of people in the chat
 // @description:pl Pokazuje liczbę użytkowników na czacie
 // @author         Pabli
@@ -10,7 +10,6 @@
 // @match          https://www.twitch.tv/*
 // @icon           data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHBhdGggZmlsbD0iI2ZmODI4MCIgZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNMTU2LjYgMTk2LjNhOTkuNCA5OS40IDAgMSAxIDEyMy4xIDk2LjUgMzkuNyAzOS43IDAgMCAwIDM1LjkgMjIuN2gxOS45YTU5LjYgNTkuNiAwIDAgMSA1OS42IDU5LjZ2MzkuOGgtMzkuOHYtMzkuOGMwLTExLTguOS0xOS45LTE5LjktMTkuOWgtMTkuOWE3OS40IDc5LjQgMCAwIDEtNTkuNi0yNi45IDc5LjUgNzkuNSAwIDAgMS01OS42IDI2LjloLTE5LjljLTExIDAtMTkuOSA4LjktMTkuOSAxOS45djM5LjhoLTM5Ljh2LTM5LjhhNTkuNiA1OS42IDAgMCAxIDU5LjYtNTkuNmgxOS45YzE1LjQgMCAyOS40LTguOCAzNS45LTIyLjdhOTkuNCA5OS40IDAgMCAxLTc1LjctOTYuNlpNMjU2IDI1NmE1OS42IDU5LjYgMCAxIDEgMC0xMTkuMiA1OS42IDU5LjYgMCAwIDEgMCAxMTkuMloiLz48cGF0aCBmaWxsPSIjZmY4MjgwIiBkPSJNMCA1MTJWMGgxMTYuOHYzNi4xSDQzLjN2NDQxLjNoNzMuNlY1MTJIMFpNNTEyIDB2NTEySDM5NS4ydi0zNi4xaDczLjZWMzQuNmgtNzMuNlYwSDUxMloiLz48L3N2Zz4=
 // @run-at         document-end
-// @grant          GM_xmlhttpRequest
 // @grant          GM_info
 // @grant          GM_notification
 // @grant          GM_openInTab
@@ -74,7 +73,7 @@ setInterval(() => {
 	}
 	
 	let channelName = path.split('/')[1];
-	if (!channelName || ['settings', 'subscriptions', 'inventory', 'wallet', 'privacy', 'turbo', 'downloads', 'p', 'annual-recap'].includes(channelName)) return;
+	if (!channelName || ['videos', 'settings', 'subscriptions', 'inventory', 'wallet', 'privacy', 'turbo', 'downloads', 'p', 'annual-recap'].includes(channelName)) return;
 	
 	if (channelName === 'popout') {
 		channelName = path.split('/')[2];
@@ -180,11 +179,12 @@ function checkForNewCards() {
 
 async function addChattersToCard(card) {
 	const cardStat = card.querySelector('div.tw-media-card-stat');
-	if (!cardStat || cardStat.querySelector('.directory-chatters-count') || card.dataset.chattersLoading === 'true') return;
+	if (!cardStat|| card.dataset.chattersCount === 'true' || card.dataset.chattersLoading === 'true') return;
 	
-	card.dataset.chattersLoading = 'true';
+	card.dataset.chattersCount = 'true';
 	
-	const channelName = card.getAttribute('href').slice(1);
+	const channelName = card.getAttribute('href')?.slice(1);
+	if (!channelName || channelName.startsWith("videos/")) return;
 	
 	const counter = document.createElement('span');
 	counter.className = 'directory-chatters-count';
@@ -194,31 +194,169 @@ async function addChattersToCard(card) {
 	counter.textContent = `[${count}]`;
 	
 	cardStat.appendChild(counter);
-	delete card.dataset.chattersLoading;
 }
 
 let lang = settings.numberFormat.value ? '' : 'en-US';
 async function getChatters(channel) {
 	if (!lang) lang = document.documentElement.getAttribute('lang') || 'en-US';
 	
-	return new Promise((resolve) => {
-		GM_xmlhttpRequest({
-			method: 'POST',
-			url: 'https://gql.twitch.tv/gql',
-			headers: {
-				'Client-Id': 'kimne78kx3ncx6brgo4mv6wki5h1ko',
-				'Content-Type': 'application/json'
+	const data = await graphqlQuery(query, { name: channel });
+	const count = data?.data?.channel?.chatters?.count;
+	
+	return count != null && !isNaN(count) ? new Intl.NumberFormat(lang).format(count) : 'N/A';
+}
+
+const query = {
+	kind: 'Document',
+	definitions: [
+		{
+			kind: 'OperationDefinition',
+			operation: 'query',
+			name: {
+				kind: 'Name',
+				value: 'GetChannelChattersCount',
 			},
-			data: JSON.stringify({
-				query: `query { channel(name: "${channel}") { chatters { count } } }`
-			}),
-			onload: response => {
-				const data = JSON.parse(response.responseText);
-				const count = data?.data?.channel?.chatters?.count;
-				resolve(count != null && !isNaN(count) ? new Intl.NumberFormat(lang).format(count) : 'N/A');
-			}
-		});
-	});
+			variableDefinitions: [
+				{
+					kind: 'VariableDefinition',
+					variable: {
+						kind: 'Variable',
+						name: {
+							kind: 'Name',
+							value: 'name',
+						},
+					},
+					type: {
+						kind: 'NonNullType',
+						type: {
+							kind: 'NamedType',
+							name: {
+								kind: 'Name',
+								value: 'String',
+							},
+						},
+					},
+					directives: [],
+				},
+			],
+			directives: [],
+			selectionSet: {
+				kind: 'SelectionSet',
+				selections: [
+					{
+						kind: 'Field',
+						name: {
+							kind: 'Name',
+							value: 'channel',
+						},
+						arguments: [
+							{
+								kind: 'Argument',
+								name: {
+									kind: 'Name',
+									value: 'name',
+								},
+								value: {
+									kind: 'Variable',
+									name: {
+										kind: 'Name',
+										value: 'name',
+									},
+								},
+							},
+						],
+						directives: [],
+						selectionSet: {
+							kind: 'SelectionSet',
+							selections: [
+								{
+									kind: 'Field',
+									name: {
+										kind: 'Name',
+										value: 'chatters',
+									},
+									arguments: [],
+									directives: [],
+									selectionSet: {
+										kind: 'SelectionSet',
+										selections: [
+											{
+												kind: 'Field',
+												name: {
+													kind: 'Name',
+													value: 'count',
+												},
+												arguments: [],
+												directives: [],
+											},
+										],
+									},
+								},
+							],
+						},
+					},
+				],
+			},
+		},
+	],
+	loc: {
+		start: 0,
+		end: 191,
+	},
+};
+
+// https://github.com/night/betterttv/blob/master/src/utils/twitch.js
+function searchReactChildren(node, predicate, maxDepth = 15, depth = 0) {
+	try {
+		if (predicate(node)) {
+			return node;
+		}
+	} catch (_) {}
+	
+	if (!node || depth > maxDepth) {
+		return null;
+	}
+	
+	const {child, sibling} = node;
+	if (child || sibling) {
+		return (
+			searchReactChildren(child, predicate, maxDepth, depth + 1) ||
+			searchReactChildren(sibling, predicate, maxDepth, depth + 1)
+		);
+	}
+	
+	return null;
+}
+
+function getReactRoot(element) {
+	for (const key in element) {
+		if (key.startsWith('_reactRootContainer') || key.startsWith('__reactContainer$')) {
+			return element[key];
+		}
+	}
+	
+	return null;
+}
+
+function getApolloClient() {
+	let client;
+	try {
+		const reactRoot = getReactRoot(document.getElementById('root'));
+		const node = searchReactChildren(
+			reactRoot?._internalRoot?.current ?? reactRoot,
+			(n) => n.pendingProps?.value?.client
+		);
+		client = node.pendingProps.value.client;
+	} catch (_) {}
+	
+	return client;
+}
+
+async function graphqlQuery(query, variables, options = {}) {
+	const client = getApolloClient();
+	if (!client) return;
+	
+	return client.query({ query, variables, ...options });
 }
 
 })();
