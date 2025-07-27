@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name           Twitch [Chatters Count]
-// @name:pl        Twitch [Ilość osób na czacie]
+// @name:pl        Twitch [Ilość Czatowników]
 // @namespace      https://github.com/pabli24
-// @version        1.1.0
+// @version        1.1.1
 // @description    Shows the amount of people in the chat
 // @description:pl Pokazuje liczbę użytkowników na czacie
 // @author         Pabli
@@ -127,8 +127,10 @@ async function updateCount(channelName) {
 
 function createChattersCounter(id) {
 	const counter = document.createElement('span');
+	const lang = document.documentElement.getAttribute('lang') || 'en-US';
+	
 	counter.id = id;
-	counter.title = 'Chatters Count';
+	counter.title = lang === 'pl-PL' ? 'Ilość Czatowników' : 'Chatters Count';
 	counter.textContent = `[${chatters}]`;
 	counter.style.cssText = `
 		color: var(--color-text-live, #ff8280);
@@ -196,14 +198,13 @@ async function addChattersToCard(card) {
 	cardStat.appendChild(counter);
 }
 
-let lang = settings.numberFormat.value ? '' : 'en-US';
 async function getChatters(channel) {
-	if (!lang) lang = document.documentElement.getAttribute('lang') || 'en-US';
+	const lang = settings.numberFormat.value ? document.documentElement.getAttribute('lang') : 'en-US';
 	
 	const data = await graphqlQuery(query, { name: channel });
 	const count = data?.data?.channel?.chatters?.count;
 	
-	return count != null && !isNaN(count) ? new Intl.NumberFormat(lang).format(count) : 'N/A';
+	return count != null && !isNaN(count) ? new Intl.NumberFormat(lang || 'en-US').format(count) : 'N/A';
 }
 
 const query = {
