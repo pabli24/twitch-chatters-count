@@ -1,13 +1,16 @@
 // ==UserScript==
 // @name           Twitch [Chatters Count]
 // @name:pl        Twitch [Ilość Czatowników]
-// @namespace      https://github.com/pabli24
-// @version        1.1.1
 // @description    Shows the amount of people in the chat
 // @description:pl Pokazuje liczbę użytkowników na czacie
+// @version        1.2.0
 // @author         Pabli
+// @namespace      https://github.com/pabli24
+// @homepageURL    https://github.com/pabli24/twitch-chatters-count
+// @supportURL     https://github.com/pabli24/twitch-chatters-count/issues
 // @license        MIT
 // @match          https://www.twitch.tv/*
+// @match          https://m.twitch.tv/*
 // @icon           data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgNTEyIDUxMiI+PHBhdGggZmlsbD0iI2ZmODI4MCIgZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNMTU2LjYgMTk2LjNhOTkuNCA5OS40IDAgMSAxIDEyMy4xIDk2LjUgMzkuNyAzOS43IDAgMCAwIDM1LjkgMjIuN2gxOS45YTU5LjYgNTkuNiAwIDAgMSA1OS42IDU5LjZ2MzkuOGgtMzkuOHYtMzkuOGMwLTExLTguOS0xOS45LTE5LjktMTkuOWgtMTkuOWE3OS40IDc5LjQgMCAwIDEtNTkuNi0yNi45IDc5LjUgNzkuNSAwIDAgMS01OS42IDI2LjloLTE5LjljLTExIDAtMTkuOSA4LjktMTkuOSAxOS45djM5LjhoLTM5Ljh2LTM5LjhhNTkuNiA1OS42IDAgMCAxIDU5LjYtNTkuNmgxOS45YzE1LjQgMCAyOS40LTguOCAzNS45LTIyLjdhOTkuNCA5OS40IDAgMCAxLTc1LjctOTYuNlpNMjU2IDI1NmE1OS42IDU5LjYgMCAxIDEgMC0xMTkuMiA1OS42IDU5LjYgMCAwIDEgMCAxMTkuMloiLz48cGF0aCBmaWxsPSIjZmY4MjgwIiBkPSJNMCA1MTJWMGgxMTYuOHYzNi4xSDQzLjN2NDQxLjNoNzMuNlY1MTJIMFpNNTEyIDB2NTEySDM5NS4ydi0zNi4xaDczLjZWMzQuNmgtNzMuNlYwSDUxMloiLz48L3N2Zz4=
 // @run-at         document-end
 // @grant          GM_info
@@ -63,12 +66,13 @@ updateMenu();
 
 let updater = null;
 let currentChannel = '';
+const isMobile = window.location.host === 'm.twitch.tv' ? true : false;
 
 setInterval(() => {
 	const path = window.location.pathname;
 	
 	if (settings.previewCards.value && (path === '/' || path.startsWith('/directory'))) {
-		checkForNewCards();
+		checkForNewCards(path);
 		return;
 	}
 	
@@ -147,7 +151,9 @@ function createChattersCounter(id) {
 function chattersCount() {
 	ct = document.getElementById('chatters-count');
 	if (ct != null) return;
-	const viewersCount = document.querySelector('main [data-a-target="animated-channel-viewers-count"]')?.parentElement;
+	const viewersCount = !isMobile
+		? document.querySelector('main [data-a-target="animated-channel-viewers-count"]')?.parentElement 
+		: document.querySelector('#channel-player [data-a-target="tw-stat-value"]')?.parentElement;
 	if (!viewersCount) return;
 	
 	ct = createChattersCounter('chatters-count');
@@ -174,18 +180,29 @@ function chatChattersCount() {
 	chatHeader.prepend(chatCt);
 }
 
-function checkForNewCards() {
-	const previewCards = document.querySelectorAll('a[data-a-target="preview-card-image-link"]');
+function checkForNewCards(path) {
+	let previewCards = null;
+	
+	if (!isMobile) {
+		previewCards = document.querySelectorAll('a[data-a-target="preview-card-image-link"]');
+	} else {
+		if (path.startsWith('/directory/following')) {
+			previewCards = document.querySelectorAll('main > div > div > h2 + div:first-of-type > div');
+		} else {
+			previewCards = document.querySelectorAll('main article');
+		}
+	}
+	
 	previewCards.forEach(addChattersToCard);
 }
 
 async function addChattersToCard(card) {
 	const cardStat = card.querySelector('div.tw-media-card-stat');
-	if (!cardStat|| card.dataset.chattersCount === 'true' || card.dataset.chattersLoading === 'true') return;
+	if (!cardStat || card.dataset.chattersCount === 'true' || card.dataset.chattersLoading === 'true') return;
 	
 	card.dataset.chattersCount = 'true';
 	
-	const channelName = card.getAttribute('href')?.slice(1);
+	const channelName = card.getAttribute('href')?.slice(1) || card.querySelector('a.tw-link')?.getAttribute('href')?.slice(1);
 	if (!channelName || channelName.startsWith("videos/")) return;
 	
 	const counter = document.createElement('span');
